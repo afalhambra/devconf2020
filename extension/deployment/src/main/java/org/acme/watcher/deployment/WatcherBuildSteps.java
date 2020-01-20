@@ -1,15 +1,11 @@
 package org.acme.watcher.deployment;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.GET;
-
-import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Record;
 
 import org.acme.watcher.Watch;
 import org.acme.watcher.Watcher;
@@ -28,18 +24,18 @@ import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
 import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 
 public class WatcherBuildSteps {
-
-    private static final String NAME = ".: WATCHER :.";
 
     private static final DotName GET = DotName.createSimple(GET.class.getName());
     private static final DotName WATCH = DotName.createSimple(Watch.class.getName());
 
     @BuildStep
     FeatureBuildItem feature() {
-        return new FeatureBuildItem(NAME);
+        return new FeatureBuildItem("watcher");
     }
 
     @BuildStep
@@ -48,13 +44,11 @@ public class WatcherBuildSteps {
     }
 
     @BuildStep
-    @Record(ExecutionTime.RUNTIME_INIT)
     void collectResourceMethods(BeanArchiveIndexBuildItem beanArchive,
             BuildProducer<WatchedResourceMethodBuildItem> resourceMethods,
-            WatcherConfig config, WatcherRecorder recorder) {
+            WatcherConfig config) {
 
         IndexView index = beanArchive.getIndex();
-        Set<MethodInfo> affectedMethods = new HashSet<>();
 
         Collection<AnnotationInstance> annotations = index.getAnnotations(GET);
         for (AnnotationInstance annotation : annotations) {
@@ -63,16 +57,19 @@ public class WatcherBuildSteps {
                 MethodInfo methodInfo = annotation.target().asMethod();
                 if (methodInfo.declaringClass().name().toString().matches(config.regularExpression)) {
                     resourceMethods.produce(new WatchedResourceMethodBuildItem(methodInfo));
-                    affectedMethods.add(methodInfo);
                 }
             }
         }
+    }
 
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void recordAffectedMethods(List<WatchedResourceMethodBuildItem> resourceMethods, WatcherRecorder recorder,
+            WatcherConfig config) {
         // use the recorder to summarize config and affected methods
-        String msg = NAME + " extension is enabled, with the regular expression being: \"" + config.regularExpression
-                + "\". Affected methods are: "
-                + affectedMethods.stream().map(m -> m.declaringClass().toString() + "#" + m.name()).collect(Collectors.toSet());
-        recorder.summarizeBootstrap(msg);
+        recorder.summarizeBootstrap(config, resourceMethods.stream().map(
+                buildItem -> buildItem.getMethod().declaringClass().toString() + "#" + buildItem.getMethod().name())
+                .collect(Collectors.toSet()));
     }
 
     @BuildStep

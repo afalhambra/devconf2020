@@ -8,7 +8,7 @@ import io.quarkus.runtime.annotations.ConfigRoot;
 public class WatcherConfig {
 
     /**
-     * Regex that defines what JAX-RS resources should be watched automatically based on the package of the resource class to be
+     * Regex that defines what JAX-RS resource methods should be watched automatically based on the resource class to be
      * included.
      * <p>
      * By default, asterisk(*) is used, meaning all resources will be modified.
@@ -17,7 +17,8 @@ public class WatcherConfig {
     public String regularExpression;
 
     /**
-     * The time limit used by watcher. If a method invocation exceeds the limit a CDI even of type {@link LimitExceeded} is fired.
+     * The time limit used by watcher. If a method invocation exceeds the limit a CDI even of type {@link LimitExceeded} is
+     * fired.
      * <p>
      * By default, the limit is 500ms.
      */
