@@ -24,9 +24,4 @@ public class WatcherConfig {
     @ConfigItem(defaultValue = "500")
     public long limit;
 
-    /**
-     * If enabled all incidents are logged, otherwise no action will be taken.
-     */
-    @ConfigItem(defaultValue = "true")
-    public boolean logEnabled;
 }

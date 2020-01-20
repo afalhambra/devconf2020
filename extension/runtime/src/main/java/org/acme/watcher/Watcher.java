@@ -21,19 +21,14 @@ public class Watcher {
             "\n" +
             "";
 
-    @ConfigProperty(name = "quarkus.watcher.log-enabled")
-    boolean logEnabled;
-
     @ConfigProperty(name = "quarkus.watcher.limit")
     long limit;
 
     void onLimitExceeded(@Observes LimitExceeded event) {
-        if (logEnabled) {
-            LOGGER.warn(BANNER);
-            LOGGER.warnf("Invocation of [%s] exceeded the limit [%s] by [%s ms]",
-                    event.methodInfo, limit,
-                    event.time - limit);
-        }
+        LOGGER.warn(BANNER);
+        LOGGER.warnf("Invocation of [%s] exceeded the limit [%s] by [%s ms]",
+                event.methodInfo, limit,
+                event.time - limit);
     }
 
 }
