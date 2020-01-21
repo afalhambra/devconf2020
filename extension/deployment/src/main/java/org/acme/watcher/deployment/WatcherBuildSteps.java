@@ -8,13 +8,16 @@ import java.util.stream.Collectors;
 import javax.ws.rs.GET;
 
 import org.acme.watcher.Watch;
+import org.acme.watcher.Watcher;
 import org.acme.watcher.WatcherConfig;
+import org.acme.watcher.WatcherInterceptor;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget.Kind;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
 import io.quarkus.arc.processor.AnnotationsTransformer;
@@ -69,6 +72,11 @@ public class WatcherBuildSteps {
                 }
             }
         });
+    }
+    
+    @BuildStep
+    AdditionalBeanBuildItem registerBeans() {
+        return AdditionalBeanBuildItem.builder().addBeanClasses(WatcherInterceptor.class, Watcher.class).build();
     }
 
 }

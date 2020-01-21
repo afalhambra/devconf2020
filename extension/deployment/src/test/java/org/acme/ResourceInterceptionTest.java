@@ -8,7 +8,6 @@ import org.hamcrest.CoreMatchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -25,7 +24,6 @@ public class ResourceInterceptionTest {
     @Inject
     EventsCollector collector;
 
-    @Disabled
     @Test
     public void testResourceGetsIntercepted() {
         RestAssured.given()
