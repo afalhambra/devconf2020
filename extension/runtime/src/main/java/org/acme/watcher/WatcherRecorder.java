@@ -13,8 +13,18 @@ public class WatcherRecorder {
     private static final Logger LOGGER = Logger.getLogger(WatcherRecorder.class);
 
     public void summarizeBootstrap(WatcherConfig config, Set<String> affectedMethods) {
-        LOGGER.infof(
-                "Watcher extension is configured with the regular expression [%s] and interceptor threshold limit [%s ms]\nMonitored JAX-RS methods include: \n\t- %s",
+        LOGGER.infof("\n" +
+                " _       __ ___   ______ ______ __  __ ______ ____ \n" +
+                "| |     / //   | /_  __// ____// / / // ____// __ \\\n" +
+                "| | /| / // /| |  / /  / /    / /_/ // __/  / /_/ /\n" +
+                "| |/ |/ // ___ | / /  / /___ / __  // /___ / _, _/ \n" +
+                "|__/|__//_/  |_|/_/   \\____//_/ /_//_____//_/ |_|  \n" +
+                "                                                   \n" +
+                "\n" +
+                "" +
+                "Regular expression: [%s]\n" +
+                "Interceptor threshold limit: %s ms\n" +
+                "Monitored JAX-RS methods: \n\t- %s\n",
                 config.regularExpression, config.limit, affectedMethods.stream().collect(Collectors.joining("\n\t- ")));
     }
 }
