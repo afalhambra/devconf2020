@@ -1,9 +1,13 @@
 package org.acme.watcher.deployment;
 
 import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.GET;
 
+import org.acme.watcher.Watch;
 import org.acme.watcher.WatcherConfig;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget.Kind;
@@ -11,7 +15,9 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 
+import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
+import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -41,6 +47,28 @@ public class WatcherBuildSteps {
                 }
             }
         }
+    }
+    
+    @BuildStep
+    AnnotationsTransformerBuildItem transformAnnotations(List<WatchedResourceMethodBuildItem> resourceMethods) {
+
+        DotName watchDotName = DotName.createSimple(Watch.class.getName());
+        Set<MethodInfo> methods = resourceMethods.stream().map(WatchedResourceMethodBuildItem::getMethod)
+                .collect(Collectors.toSet());
+
+        return new AnnotationsTransformerBuildItem(new AnnotationsTransformer() {
+
+            public boolean appliesTo(Kind kind) {
+                return Kind.METHOD.equals(kind);
+            }
+
+            @Override
+            public void transform(TransformationContext context) {
+                if (methods.contains(context.getTarget())) {
+                    context.transform().add(watchDotName).done();
+                }
+            }
+        });
     }
 
 }
