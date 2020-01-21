@@ -1,6 +1,6 @@
 package org.acme.watcher.deployment;
 
-import java.util.Collection;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,17 +30,9 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 
 public class WatcherBuildSteps {
 
-    private static final DotName GET = DotName.createSimple(GET.class.getName());
-    private static final DotName WATCH = DotName.createSimple(Watch.class.getName());
-
     @BuildStep
     FeatureBuildItem feature() {
         return new FeatureBuildItem("watcher");
-    }
-
-    @BuildStep
-    AdditionalBeanBuildItem beans() {
-        return AdditionalBeanBuildItem.builder().addBeanClasses(WatcherInterceptor.class, Watcher.class).build();
     }
 
     @BuildStep
@@ -49,32 +41,24 @@ public class WatcherBuildSteps {
             WatcherConfig config) {
 
         IndexView index = beanArchive.getIndex();
+        DotName getDotName = DotName.createSimple(GET.class.getName());
 
-        Collection<AnnotationInstance> annotations = index.getAnnotations(GET);
-        for (AnnotationInstance annotation : annotations) {
+        for (AnnotationInstance annotation : index.getAnnotations(getDotName)) {
             if (annotation.target().kind() == Kind.METHOD) {
+                MethodInfo method = annotation.target().asMethod();
                 // filter out methods based on config expression
-                MethodInfo methodInfo = annotation.target().asMethod();
-                if (methodInfo.declaringClass().name().toString().matches(config.regularExpression)) {
-                    resourceMethods.produce(new WatchedResourceMethodBuildItem(methodInfo));
+                if (Modifier.isPublic(method.flags())
+                        && method.declaringClass().name().toString().matches(config.regularExpression)) {
+                    resourceMethods.produce(new WatchedResourceMethodBuildItem(method));
                 }
             }
         }
     }
-
-    @BuildStep
-    @Record(ExecutionTime.RUNTIME_INIT)
-    void recordAffectedMethods(List<WatchedResourceMethodBuildItem> resourceMethods, WatcherRecorder recorder,
-            WatcherConfig config) {
-        // use the recorder to summarize config and affected methods
-        recorder.summarizeBootstrap(config, resourceMethods.stream().map(
-                buildItem -> buildItem.getMethod().declaringClass().toString() + "#" + buildItem.getMethod().name())
-                .collect(Collectors.toSet()));
-    }
-
+    
     @BuildStep
     AnnotationsTransformerBuildItem transformAnnotations(List<WatchedResourceMethodBuildItem> resourceMethods) {
 
+        DotName watchDotName = DotName.createSimple(Watch.class.getName());
         Set<MethodInfo> methods = resourceMethods.stream().map(WatchedResourceMethodBuildItem::getMethod)
                 .collect(Collectors.toSet());
 
@@ -87,10 +71,25 @@ public class WatcherBuildSteps {
             @Override
             public void transform(TransformationContext context) {
                 if (methods.contains(context.getTarget())) {
-                    context.transform().add(WATCH).done();
+                    context.transform().add(watchDotName).done();
                 }
             }
         });
+    }
+
+    @BuildStep
+    AdditionalBeanBuildItem registerBeans() {
+        return AdditionalBeanBuildItem.builder().addBeanClasses(WatcherInterceptor.class, Watcher.class).build();
+    }
+    
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void recordAffectedMethods(List<WatchedResourceMethodBuildItem> resourceMethods, WatcherRecorder recorder,
+            WatcherConfig config) {
+        // use the recorder to summarize config and affected methods
+        recorder.summarizeBootstrap(config, resourceMethods.stream().map(
+                buildItem -> buildItem.getMethod().declaringClass().toString() + "#" + buildItem.getMethod().name())
+                .collect(Collectors.toSet()));
     }
 
 }
