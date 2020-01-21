@@ -21,12 +21,12 @@
             <artifactId>watcher</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <!--  Test dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
