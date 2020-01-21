@@ -11,6 +11,7 @@ import org.acme.watcher.Watch;
 import org.acme.watcher.Watcher;
 import org.acme.watcher.WatcherConfig;
 import org.acme.watcher.WatcherInterceptor;
+import org.acme.watcher.WatcherRecorder;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget.Kind;
 import org.jboss.jandex.DotName;
@@ -23,6 +24,8 @@ import io.quarkus.arc.deployment.BeanArchiveIndexBuildItem;
 import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 
 public class WatcherBuildSteps {
@@ -77,6 +80,16 @@ public class WatcherBuildSteps {
     @BuildStep
     AdditionalBeanBuildItem registerBeans() {
         return AdditionalBeanBuildItem.builder().addBeanClasses(WatcherInterceptor.class, Watcher.class).build();
+    }
+    
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void recordAffectedMethods(List<WatchedResourceMethodBuildItem> resourceMethods, WatcherRecorder recorder,
+            WatcherConfig config) {
+        // use the recorder to summarize config and affected methods
+        recorder.summarizeBootstrap(config, resourceMethods.stream().map(
+                buildItem -> buildItem.getMethod().declaringClass().toString() + "#" + buildItem.getMethod().name())
+                .collect(Collectors.toSet()));
     }
 
 }
